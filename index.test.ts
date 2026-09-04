@@ -4,7 +4,7 @@ import { kid, kid16, kid26, kid36, kid62 } from "./index.ts";
 const MS_PER_YEAR = 365.2425 * 86_400 * 1000;
 
 const variants = [
-  { name: "kid16", fn: kid16, alphabet: "0123456789abcdef", timeLength: 12, randomLength: 17 },
+  { name: "kid16", fn: kid16, alphabet: "0123456789abcdef", timeLength: 12, randomLength: 16 },
   { name: "kid26", fn: kid26, alphabet: "abcdefghijklmnopqrstuvwxyz", timeLength: 10, randomLength: 14 },
   { name: "kid36", fn: kid36, alphabet: "0123456789abcdefghijklmnopqrstuvwxyz", timeLength: 9, randomLength: 13 },
   {
@@ -38,8 +38,8 @@ describe.each(variants)("$name", ({ fn, alphabet, timeLength, randomLength }) =>
     expect(base ** timeLength).toBeGreaterThan(Date.now() + 1000 * MS_PER_YEAR);
   });
 
-  test("random part has more than 64 bits", () => {
-    expect(randomLength * Math.log2(base)).toBeGreaterThan(64);
+  test("random part has at least 64 bits", () => {
+    expect(randomLength * Math.log2(base)).toBeGreaterThanOrEqual(64);
   });
 
   test("has the expected length and only alphabet characters", () => {

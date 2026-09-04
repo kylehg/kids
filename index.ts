@@ -5,10 +5,10 @@
 // IDs made earlier as plain strings, because every alphabet is in ASCII order.
 //
 // Lengths are chosen so that the time part lasts more than 1000 years from
-// now and the random part holds more than 64 bits of randomness:
+// now and the random part holds at least 64 bits of randomness:
 //
 //   base  time  lasts until  random  bits
-//   16    12    year 10889   17      68.0
+//   16    12    year 10889   16      64.0
 //   26    10    year 6443    14      65.8
 //   36    9     year 5188    13      67.2
 //   62    8     year 8888    11      65.5
@@ -48,8 +48,8 @@ function makeKid(alphabet: string, timeLength: number, randomLength: number): Ki
   return (prefix = "") => prefix + encodeTime(Date.now()) + randomChars();
 }
 
-/** Hex KID: 12 time chars + 17 random chars, `0-9a-f`. */
-export const kid16: KidFn = makeKid("0123456789abcdef", 12, 17);
+/** Hex KID: 12 time chars + 16 random chars, `0-9a-f`. */
+export const kid16: KidFn = makeKid("0123456789abcdef", 12, 16);
 
 /** Letters-only KID: 10 time chars + 14 random chars, `a-z`. */
 export const kid26: KidFn = makeKid("abcdefghijklmnopqrstuvwxyz", 10, 14);
