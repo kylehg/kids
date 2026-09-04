@@ -1,42 +1,64 @@
-const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
-const BASE = 26;
-const TIME_LENGTH = 10;
-const RANDOM_LENGTH = 14;
+// Each KID is: [prefix] + time part + random part.
+//
+// The time part is the ms since the Unix epoch written in the alphabet's
+// base, padded on the left with the first letter. IDs made later sort after
+// IDs made earlier as plain strings, because every alphabet is in ASCII order.
+//
+// Lengths are chosen so that the time part lasts more than 1000 years from
+// now and the random part holds more than 64 bits of randomness:
+//
+//   base  time  lasts until  random  bits
+//   16    12    year 10889   17      68.0
+//   26    10    year 6443    14      65.8
+//   62    8     year 8888    11      65.5
 
-// Largest multiple of 26 that fits in a byte. Bytes at or above this are
-// thrown away so every letter has the same chance of being picked.
-const MAX_UNBIASED_BYTE = 234;
+type KidFn = (prefix?: string) => string;
 
-function encodeTime(ms: number): string {
-  let n = ms;
-  let out = "";
-  while (n > 0) {
-    out = ALPHABET[n % BASE] + out;
-    n = Math.floor(n / BASE);
-  }
-  return out.padStart(TIME_LENGTH, ALPHABET[0]);
-}
+function makeKid(alphabet: string, timeLength: number, randomLength: number): KidFn {
+  const base = alphabet.length;
+  // Bytes at or above this are thrown away so every character has the same
+  // chance of being picked.
+  const maxUnbiasedByte = 256 - (256 % base);
+  const buf = new Uint8Array(randomLength * 2);
 
-function randomLetters(length: number): string {
-  let out = "";
-  const buf = new Uint8Array(length * 2);
-  while (out.length < length) {
-    crypto.getRandomValues(buf);
-    for (const byte of buf) {
-      if (byte >= MAX_UNBIASED_BYTE) continue;
-      out += ALPHABET[byte % BASE];
-      if (out.length === length) break;
+  function encodeTime(ms: number): string {
+    let n = ms;
+    let out = "";
+    while (n > 0) {
+      out = alphabet[n % base] + out;
+      n = Math.floor(n / base);
     }
+    return out.padStart(timeLength, alphabet[0]);
   }
-  return out;
+
+  function randomChars(): string {
+    let out = "";
+    while (out.length < randomLength) {
+      crypto.getRandomValues(buf);
+      for (const byte of buf) {
+        if (byte >= maxUnbiasedByte) continue;
+        out += alphabet[byte % base];
+        if (out.length === randomLength) break;
+      }
+    }
+    return out;
+  }
+
+  return (prefix = "") => prefix + encodeTime(Date.now()) + randomChars();
 }
 
-/**
- * Make a KID (KyleID): a lowercase, letters-only ID.
- *
- * Layout: `[prefix]` + 10 letters of base-26 timestamp (ms since the Unix
- * epoch) + 14 random letters. IDs made later sort after IDs made earlier.
- */
-export function kid(prefix = ""): string {
-  return prefix + encodeTime(Date.now()) + randomLetters(RANDOM_LENGTH);
-}
+/** Hex KID: 12 time chars + 17 random chars, `0-9a-f`. */
+export const kid16: KidFn = makeKid("0123456789abcdef", 12, 17);
+
+/** Letters-only KID: 10 time chars + 14 random chars, `a-z`. */
+export const kid26: KidFn = makeKid("abcdefghijklmnopqrstuvwxyz", 10, 14);
+
+/** Alphanumeric KID: 8 time chars + 11 random chars, `0-9A-Za-z`. */
+export const kid62: KidFn = makeKid(
+  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+  8,
+  11,
+);
+
+/** The default KID (KyleID). Same as {@link kid26}. */
+export const kid: KidFn = kid26;
