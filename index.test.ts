@@ -1,16 +1,28 @@
 import { describe, expect, test } from "bun:test";
-import { kid, kid16, kid26, kid36, kid62 } from "./index.ts";
+import {
+  ALPHABET_16,
+  ALPHABET_26,
+  ALPHABET_36,
+  ALPHABET_62,
+  encode_time,
+  kid,
+  kid16,
+  kid26,
+  kid36,
+  kid62,
+  random_chars,
+} from "./index.ts";
 
 const MS_PER_YEAR = 365.2425 * 86_400 * 1000;
 
 const variants = [
-  { name: "kid16", fn: kid16, alphabet: "0123456789abcdef", time_length: 12, random_length: 16 },
-  { name: "kid26", fn: kid26, alphabet: "abcdefghijklmnopqrstuvwxyz", time_length: 10, random_length: 14 },
-  { name: "kid36", fn: kid36, alphabet: "0123456789abcdefghijklmnopqrstuvwxyz", time_length: 9, random_length: 13 },
+  { name: "kid16", fn: kid16, alphabet: ALPHABET_16, time_length: 12, random_length: 16 },
+  { name: "kid26", fn: kid26, alphabet: ALPHABET_26, time_length: 10, random_length: 14 },
+  { name: "kid36", fn: kid36, alphabet: ALPHABET_36, time_length: 9, random_length: 13 },
   {
     name: "kid62",
     fn: kid62,
-    alphabet: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+    alphabet: ALPHABET_62,
     time_length: 8,
     random_length: 11,
   },
@@ -24,6 +36,31 @@ function decode_time(s: string, alphabet: string): number {
 
 test("kid is kid26", () => {
   expect(kid).toBe(kid26);
+});
+
+describe("encode_time", () => {
+  test("writes a number in the alphabet's base, left-padded", () => {
+    expect(encode_time(0, ALPHABET_16, 4)).toBe("0000");
+    expect(encode_time(255, ALPHABET_16, 4)).toBe("00ff");
+    expect(encode_time(26, ALPHABET_26, 3)).toBe("aba");
+    expect(encode_time(61, ALPHABET_62, 2)).toBe("0z");
+  });
+
+  test("throws when the number does not fit", () => {
+    expect(() => encode_time(256, ALPHABET_16, 2)).toThrow(RangeError);
+  });
+});
+
+describe("random_chars", () => {
+  test("returns the requested length from the alphabet", () => {
+    const s = random_chars("xyz", 50);
+    expect(s).toHaveLength(50);
+    expect(s).toMatch(/^[xyz]{50}$/);
+  });
+
+  test("returns an empty string for length 0", () => {
+    expect(random_chars(ALPHABET_16, 0)).toBe("");
+  });
 });
 
 describe.each(variants)("$name", ({ fn, alphabet, time_length, random_length }) => {
