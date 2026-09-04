@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { kid, kid16, kid26, kid62 } from "./index.ts";
+import { kid, kid16, kid26, kid36, kid62 } from "./index.ts";
 
 const MS_PER_YEAR = 365.2425 * 86_400 * 1000;
 
 const variants = [
   { name: "kid16", fn: kid16, alphabet: "0123456789abcdef", timeLength: 12, randomLength: 17 },
   { name: "kid26", fn: kid26, alphabet: "abcdefghijklmnopqrstuvwxyz", timeLength: 10, randomLength: 14 },
+  { name: "kid36", fn: kid36, alphabet: "0123456789abcdefghijklmnopqrstuvwxyz", timeLength: 9, randomLength: 13 },
   {
     name: "kid62",
     fn: kid62,

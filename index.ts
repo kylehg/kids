@@ -10,6 +10,7 @@
 //   base  time  lasts until  random  bits
 //   16    12    year 10889   17      68.0
 //   26    10    year 6443    14      65.8
+//   36    9     year 5188    13      67.2
 //   62    8     year 8888    11      65.5
 
 type KidFn = (prefix?: string) => string;
@@ -53,7 +54,10 @@ export const kid16: KidFn = makeKid("0123456789abcdef", 12, 17);
 /** Letters-only KID: 10 time chars + 14 random chars, `a-z`. */
 export const kid26: KidFn = makeKid("abcdefghijklmnopqrstuvwxyz", 10, 14);
 
-/** Alphanumeric KID: 8 time chars + 11 random chars, `0-9A-Za-z`. */
+/** Lowercase alphanumeric KID: 9 time chars + 13 random chars, `0-9a-z`. */
+export const kid36: KidFn = makeKid("0123456789abcdefghijklmnopqrstuvwxyz", 9, 13);
+
+/** Mixed-case alphanumeric KID: 8 time chars + 11 random chars, `0-9A-Za-z`. */
 export const kid62: KidFn = makeKid(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
   8,
