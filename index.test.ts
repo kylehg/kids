@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
-  ALPHABET_16,
-  ALPHABET_26,
-  ALPHABET_36,
-  ALPHABET_62,
+  ALPHABET16,
+  ALPHABET26,
+  ALPHABET36,
+  ALPHABET62,
   encode_time,
   kid,
   kid16,
@@ -16,13 +16,13 @@ import {
 const MS_PER_YEAR = 365.2425 * 86_400 * 1000;
 
 const variants = [
-  { name: "kid16", fn: kid16, alphabet: ALPHABET_16, time_length: 12, random_length: 16 },
-  { name: "kid26", fn: kid26, alphabet: ALPHABET_26, time_length: 10, random_length: 14 },
-  { name: "kid36", fn: kid36, alphabet: ALPHABET_36, time_length: 9, random_length: 13 },
+  { name: "kid16", fn: kid16, alphabet: ALPHABET16, time_length: 12, random_length: 16 },
+  { name: "kid26", fn: kid26, alphabet: ALPHABET26, time_length: 10, random_length: 14 },
+  { name: "kid36", fn: kid36, alphabet: ALPHABET36, time_length: 9, random_length: 13 },
   {
     name: "kid62",
     fn: kid62,
-    alphabet: ALPHABET_62,
+    alphabet: ALPHABET62,
     time_length: 8,
     random_length: 11,
   },
@@ -40,14 +40,14 @@ test("kid is kid26", () => {
 
 describe("encode_time", () => {
   test("writes a number in the alphabet's base, left-padded", () => {
-    expect(encode_time(0, ALPHABET_16, 4)).toBe("0000");
-    expect(encode_time(255, ALPHABET_16, 4)).toBe("00ff");
-    expect(encode_time(26, ALPHABET_26, 3)).toBe("aba");
-    expect(encode_time(61, ALPHABET_62, 2)).toBe("0z");
+    expect(encode_time(0, ALPHABET16, 4)).toBe("0000");
+    expect(encode_time(255, ALPHABET16, 4)).toBe("00ff");
+    expect(encode_time(26, ALPHABET26, 3)).toBe("aba");
+    expect(encode_time(61, ALPHABET62, 2)).toBe("0z");
   });
 
   test("throws when the number does not fit", () => {
-    expect(() => encode_time(256, ALPHABET_16, 2)).toThrow(RangeError);
+    expect(() => encode_time(256, ALPHABET16, 2)).toThrow(RangeError);
   });
 });
 
@@ -59,7 +59,7 @@ describe("random_chars", () => {
   });
 
   test("returns an empty string for length 0", () => {
-    expect(random_chars(ALPHABET_16, 0)).toBe("");
+    expect(random_chars(ALPHABET16, 0)).toBe("");
   });
 });
 

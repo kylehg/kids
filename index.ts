@@ -14,10 +14,10 @@
 //   36    9     year 5188    13      67.2
 //   62    8     year 8888    11      65.5
 
-export const ALPHABET_16 = "0123456789abcdef";
-export const ALPHABET_26 = "abcdefghijklmnopqrstuvwxyz";
-export const ALPHABET_36 = "0123456789abcdefghijklmnopqrstuvwxyz";
-export const ALPHABET_62 =
+export const ALPHABET16 = "0123456789abcdef";
+export const ALPHABET26 = "abcdefghijklmnopqrstuvwxyz";
+export const ALPHABET36 = "0123456789abcdefghijklmnopqrstuvwxyz";
+export const ALPHABET62 =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 export type KidFn = (prefix?: string) => string;
@@ -66,16 +66,16 @@ export function make_kid(alphabet: string, time_length: number, random_length: n
 }
 
 /** Hex KID: 12 time chars + 16 random chars, `0-9a-f`. */
-export const kid16: KidFn = make_kid(ALPHABET_16, 12, 16);
+export const kid16: KidFn = make_kid(ALPHABET16, 12, 16);
 
 /** Letters-only KID: 10 time chars + 14 random chars, `a-z`. */
-export const kid26: KidFn = make_kid(ALPHABET_26, 10, 14);
+export const kid26: KidFn = make_kid(ALPHABET26, 10, 14);
 
 /** Lowercase alphanumeric KID: 9 time chars + 13 random chars, `0-9a-z`. */
-export const kid36: KidFn = make_kid(ALPHABET_36, 9, 13);
+export const kid36: KidFn = make_kid(ALPHABET36, 9, 13);
 
 /** Mixed-case alphanumeric KID: 8 time chars + 11 random chars, `0-9A-Za-z`. */
-export const kid62: KidFn = make_kid(ALPHABET_62, 8, 11);
+export const kid62: KidFn = make_kid(ALPHABET62, 8, 11);
 
 /** The default KID (KyleID). Same as {@link kid26}. */
 export const kid: KidFn = kid26;
