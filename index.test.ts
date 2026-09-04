@@ -4,19 +4,19 @@ import { kid, kid16, kid26, kid36, kid62 } from "./index.ts";
 const MS_PER_YEAR = 365.2425 * 86_400 * 1000;
 
 const variants = [
-  { name: "kid16", fn: kid16, alphabet: "0123456789abcdef", timeLength: 12, randomLength: 16 },
-  { name: "kid26", fn: kid26, alphabet: "abcdefghijklmnopqrstuvwxyz", timeLength: 10, randomLength: 14 },
-  { name: "kid36", fn: kid36, alphabet: "0123456789abcdefghijklmnopqrstuvwxyz", timeLength: 9, randomLength: 13 },
+  { name: "kid16", fn: kid16, alphabet: "0123456789abcdef", time_length: 12, random_length: 16 },
+  { name: "kid26", fn: kid26, alphabet: "abcdefghijklmnopqrstuvwxyz", time_length: 10, random_length: 14 },
+  { name: "kid36", fn: kid36, alphabet: "0123456789abcdefghijklmnopqrstuvwxyz", time_length: 9, random_length: 13 },
   {
     name: "kid62",
     fn: kid62,
     alphabet: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
-    timeLength: 8,
-    randomLength: 11,
+    time_length: 8,
+    random_length: 11,
   },
 ];
 
-function decodeTime(s: string, alphabet: string): number {
+function decode_time(s: string, alphabet: string): number {
   let n = 0;
   for (const c of s) n = n * alphabet.length + alphabet.indexOf(c);
   return n;
@@ -26,20 +26,20 @@ test("kid is kid26", () => {
   expect(kid).toBe(kid26);
 });
 
-describe.each(variants)("$name", ({ fn, alphabet, timeLength, randomLength }) => {
+describe.each(variants)("$name", ({ fn, alphabet, time_length, random_length }) => {
   const base = alphabet.length;
-  const total = timeLength + randomLength;
+  const total = time_length + random_length;
 
   test("alphabet is in ASCII order so IDs sort as strings", () => {
     expect([...alphabet].sort().join("")).toBe(alphabet);
   });
 
   test("time part lasts more than 1000 years from now", () => {
-    expect(base ** timeLength).toBeGreaterThan(Date.now() + 1000 * MS_PER_YEAR);
+    expect(base ** time_length).toBeGreaterThan(Date.now() + 1000 * MS_PER_YEAR);
   });
 
   test("random part has at least 64 bits", () => {
-    expect(randomLength * Math.log2(base)).toBeGreaterThanOrEqual(64);
+    expect(random_length * Math.log2(base)).toBeGreaterThanOrEqual(64);
   });
 
   test("has the expected length and only alphabet characters", () => {
@@ -58,7 +58,7 @@ describe.each(variants)("$name", ({ fn, alphabet, timeLength, randomLength }) =>
     const before = Date.now();
     const id = fn();
     const after = Date.now();
-    const t = decodeTime(id.slice(0, timeLength), alphabet);
+    const t = decode_time(id.slice(0, time_length), alphabet);
     expect(t).toBeGreaterThanOrEqual(before);
     expect(t).toBeLessThanOrEqual(after);
   });
@@ -78,7 +78,7 @@ describe.each(variants)("$name", ({ fn, alphabet, timeLength, randomLength }) =>
   test("random part uses every character", () => {
     const seen = new Set<string>();
     for (let i = 0; i < 500; i++) {
-      for (const c of fn().slice(timeLength)) seen.add(c);
+      for (const c of fn().slice(time_length)) seen.add(c);
     }
     expect(seen.size).toBe(base);
   });
