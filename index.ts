@@ -111,3 +111,9 @@ export const kid62: KidFn = make_kid(ALPHABET62, 8, 11);
 
 /** The default KID (KyleID). Same as {@link kid26}. */
 export const kid: KidFn = kid26;
+
+/**
+ * Most compact useful KID: 10 base62 chars, lasts 29 years from now,
+ * P(collision) > 1% if minting more than 1000 IDs per second.
+ */
+export const little_kid: KidFn = make_kid(ALPHABET62, 5, 5, { epoch: Date.now(), precision: "sec" });
