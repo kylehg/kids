@@ -157,6 +157,11 @@ describe("make_kid options", () => {
     expect(t).toBe(Math.floor((Date.now() - epoch) / 1000));
   });
 
+  test("time_length 0 drops the time part", () => {
+    const fn = make_kid(ALPHABET16, 0, 8, { epoch: Date.now() + 1e9 });
+    expect(fn("x_")).toMatch(/^x_[0-9a-f]{8}$/);
+  });
+
   test("throws when now is before the epoch", () => {
     const fn = make_kid(ALPHABET16, 12, 0, { epoch: Date.now() + 1e9 });
     expect(() => fn()).toThrow(RangeError);
@@ -197,6 +202,11 @@ describe("cli", () => {
   test("takes prefix and part lengths", () => {
     expect(run("62", "-p", "usr_", "-t", "9", "-r", "3").out).toMatch(/^usr_[0-9A-Za-z]{12}\n$/);
     expect(run("--prefix", "x", "--random", "0").out).toMatch(/^x[a-z]{10}\n$/);
+  });
+
+  test("-t 0 drops the time part", () => {
+    expect(run("-t", "0").out).toMatch(/^[a-z]{14}\n$/);
+    expect(run("-t", "0", "-e", "2999-01-01").code).toBe(0);
   });
 
   test("takes a custom alphabet with explicit lengths", () => {

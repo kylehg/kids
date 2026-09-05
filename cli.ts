@@ -34,7 +34,7 @@ Alphabet:
   alphabet. You must then give -t and -r.
 
 Options:
-  -t, --time <n>      Number of time chars
+  -t, --time <n>      Number of time chars. 0 drops the time part.
   -r, --random <n>    Number of random chars
   -p, --prefix <s>    String to put before the ID
   -e, --epoch <when>  Time zero for the time part, as an ISO date or ms since

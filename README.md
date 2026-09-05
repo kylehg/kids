@@ -26,7 +26,8 @@ earlier as plain strings. Lengths are chosen so the time part lasts more than
 
 To roll your own, use `make_kid(alphabet, time_length, random_length, options?)`,
 or the pieces it is built from: `encode_time(ms, alphabet, length)` and
-`random_chars(alphabet, length)`. The options are:
+`random_chars(alphabet, length)`. A `time_length` of 0 drops the time part,
+so the ID is pure random and does not sort by creation time. The options are:
 
 - `epoch`: time zero for the time part, as ms since the Unix epoch or a
   `Date`. Default 0. A later epoch makes the same number of time chars last
@@ -58,7 +59,7 @@ The first argument picks the alphabet: `16`, `26` (default), `36`, `62`, or
 
 | Option              | Meaning                    |
 | ------------------- | -------------------------- |
-| `-t, --time <n>`    | Number of time chars       |
+| `-t, --time <n>`    | Number of time chars. 0 drops the time part. |
 | `-r, --random <n>`  | Number of random chars     |
 | `-p, --prefix <s>`  | String to put before the ID |
 | `-e, --epoch <when>` | Time zero, as an ISO date or ms since the Unix epoch |

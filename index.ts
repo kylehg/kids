@@ -74,7 +74,11 @@ export function random_chars(alphabet: string, length: number): string {
   return out;
 }
 
-/** Build a KID function for `alphabet` with the given part lengths. */
+/**
+ * Build a KID function for `alphabet` with the given part lengths. A
+ * `time_length` of 0 drops the time part, so the ID is pure random and does
+ * not sort by creation time.
+ */
 export function make_kid(
   alphabet: string,
   time_length: number,
@@ -84,15 +88,13 @@ export function make_kid(
   const epoch_ms = typeof epoch === "number" ? epoch : epoch.getTime();
   if (!Number.isFinite(epoch_ms)) throw new RangeError(`invalid epoch: ${String(epoch)}`);
   const divisor = precision === "sec" ? 1000 : 1;
-  return (prefix = "") => {
+  const time_part = (): string => {
+    if (time_length === 0) return "";
     const elapsed = Date.now() - epoch_ms;
     if (elapsed < 0) throw new RangeError(`current time is before the epoch ${epoch_ms}`);
-    return (
-      prefix +
-      encode_time(elapsed / divisor, alphabet, time_length) +
-      random_chars(alphabet, random_length)
-    );
+    return encode_time(elapsed / divisor, alphabet, time_length);
   };
+  return (prefix = "") => prefix + time_part() + random_chars(alphabet, random_length);
 }
 
 /** Hex KID: 12 time chars + 16 random chars, `0-9a-f`. */
