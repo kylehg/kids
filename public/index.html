@@ -145,7 +145,7 @@ function fmt_years(y) {
 function words(n) {
   if (n >= 1e18) return fmt_int(n);
   const units = [["quadrillion", 1e15], ["trillion", 1e12], ["billion", 1e9], ["million", 1e6], ["thousand", 1e3]];
-  for (const [w, v] of units) if (n >= v) return `${(n / v).toPrecision(3).replace(/\.?0+$/, "")} ${w}`;
+  for (const [w, v] of units) if (n >= v) return `${+(n / v).toPrecision(3)} ${w}`;
   return Math.round(n).toLocaleString("en-US");
 }
 
