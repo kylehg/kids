@@ -39,9 +39,11 @@ so the ID is pure random and does not sort by creation time. The options are:
 ```ts
 const short = make_kid(ALPHABET36, 6, 10, { epoch: Date.UTC(2024, 0, 1), precision: "sec" });
 short(); // 6 base-36 seconds last ~69 years from 2024
-``` The alphabets are exported as `ALPHABET16`,
-`ALPHABET26`, `ALPHABET36`, and `ALPHABET62`. There is also `ALT16`, base 16
-written in the letters `k-z`, for hex-shaped IDs with no digits.
+```
+
+The alphabets are exported as `ALPHABET16`, `ALPHABET26`, `ALPHABET36`, and
+`ALPHABET62`. There is also `ALT16`, base 16 written in the letters `k-z`, for
+hex-shaped IDs with no digits.
 
 ## CLI
 
