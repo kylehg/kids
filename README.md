@@ -27,7 +27,31 @@ earlier as plain strings. Lengths are chosen so the time part lasts more than
 To roll your own, use `make_kid(alphabet, time_length, random_length)`, or the
 pieces it is built from: `encode_time(ms, alphabet, length)` and
 `random_chars(alphabet, length)`. The alphabets are exported as `ALPHABET16`,
-`ALPHABET26`, `ALPHABET36`, and `ALPHABET62`.
+`ALPHABET26`, `ALPHABET36`, and `ALPHABET62`. There is also `ALT16`, base 16
+written in the letters `k-z`, for hex-shaped IDs with no digits.
+
+## CLI
+
+```sh
+bun cli.ts                    # aiorufljxihtlhxntcifnwnb    default kid26
+bun cli.ts 16                 # 01a06e1b1b2a2f59d9ba61602246
+bun cli.ts alt16              # klukrltsmnmwqmtzloovymwrrton
+bun cli.ts 62 -p usr_         # usr_0VUHkNcwATdiFLsxQdu
+bun cli.ts 36 -t 9 -r 6       # 0mtnembgoq3x7zk         custom lengths
+bun cli.ts xyz -t 30 -r 4     # custom alphabet; -t and -r are required
+```
+
+The first argument picks the alphabet: `16`, `26` (default), `36`, `62`, or
+`alt16`. Any other string of distinct characters is used as a custom alphabet.
+
+| Option              | Meaning                    |
+| ------------------- | -------------------------- |
+| `-t, --time <n>`    | Number of time chars       |
+| `-r, --random <n>`  | Number of random chars     |
+| `-p, --prefix <s>`  | String to put before the ID |
+| `-h, --help`        | Show help                  |
+
+To install it as `kid` on your path, run `bun link` in this directory.
 
 ## Develop
 

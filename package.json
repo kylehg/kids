@@ -7,5 +7,11 @@
   },
   "peerDependencies": {
     "typescript": "^7"
+  },
+  "bin": {
+    "kid": "./cli.ts"
+  },
+  "scripts": {
+    "kid": "bun cli.ts"
   }
 }

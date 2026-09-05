@@ -19,6 +19,8 @@ export const ALPHABET26 = "abcdefghijklmnopqrstuvwxyz";
 export const ALPHABET36 = "0123456789abcdefghijklmnopqrstuvwxyz";
 export const ALPHABET62 =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+/** Base 16 in letters only, `k-z`. Same lengths as {@link ALPHABET16}. */
+export const ALT16 = "klmnopqrstuvwxyz";
 
 export type KidFn = (prefix?: string) => string;
 

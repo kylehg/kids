@@ -4,6 +4,7 @@ import {
   ALPHABET26,
   ALPHABET36,
   ALPHABET62,
+  ALT16,
   encode_time,
   kid,
   kid16,
@@ -118,5 +119,56 @@ describe.each(variants)("$name", ({ fn, alphabet, time_length, random_length }) 
       for (const c of fn().slice(time_length)) seen.add(c);
     }
     expect(seen.size).toBe(base);
+  });
+});
+
+describe("ALT16", () => {
+  test("is base 16, letters k through z, in ASCII order", () => {
+    expect(ALT16).toHaveLength(16);
+    expect(ALT16).toBe("klmnopqrstuvwxyz");
+    expect([...ALT16].sort().join("")).toBe(ALT16);
+  });
+});
+
+describe("cli", () => {
+  function run(...args: string[]) {
+    const r = Bun.spawnSync(["bun", "cli.ts", ...args], { cwd: import.meta.dir });
+    return { code: r.exitCode, out: r.stdout.toString(), err: r.stderr.toString() };
+  }
+
+  test("prints a kid26 by default", () => {
+    const r = run();
+    expect(r.code).toBe(0);
+    expect(r.out).toMatch(/^[a-z]{24}\n$/);
+  });
+
+  test("picks the alphabet from the first arg", () => {
+    expect(run("16").out).toMatch(/^[0-9a-f]{28}\n$/);
+    expect(run("36").out).toMatch(/^[0-9a-z]{22}\n$/);
+    expect(run("62").out).toMatch(/^[0-9A-Za-z]{19}\n$/);
+    expect(run("alt16").out).toMatch(/^[k-z]{28}\n$/);
+  });
+
+  test("takes prefix and part lengths", () => {
+    expect(run("62", "-p", "usr_", "-t", "9", "-r", "3").out).toMatch(/^usr_[0-9A-Za-z]{12}\n$/);
+    expect(run("--prefix", "x", "--random", "0").out).toMatch(/^x[a-z]{10}\n$/);
+  });
+
+  test("takes a custom alphabet with explicit lengths", () => {
+    expect(run("xyz", "-t", "30", "-r", "4").out).toMatch(/^[xyz]{34}\n$/);
+  });
+
+  test("rejects bad input", () => {
+    expect(run("99").code).toBe(2);
+    expect(run("xyz").err).toContain("--time is required");
+    expect(run("-r", "abc").err).toContain("--random must be a whole number");
+    expect(run("16", "-t", "2").err).toContain("does not fit");
+    expect(run("-t", "0", "-r", "0").err).toContain("empty");
+  });
+
+  test("prints help", () => {
+    const r = run("--help");
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("Usage: kid");
   });
 });
