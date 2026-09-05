@@ -76,3 +76,18 @@ To install it as `kid` on your path, run `bun link` in this directory.
 bun test
 bunx tsc --noEmit
 ```
+
+## why
+
+i have weirdly strong biases about ids. if they're db pks i want them to insert
+in-order. if they're in a url i want them to be selectable all in one
+double-click (no base64 `-`). when spoken it's helpful if they're case
+insensitive. i also find the mixed casing (and mixed height of numbers and
+letters) aesthetically displeasing. i often want them prefixed but not always. i
+want them to be short as possible but no shorter. for core entities that are
+frequently viewed/referenced i want them to be shorter than a credit card
+number, though care less about ordering/insert speed if they're minted less
+often. i vary all these preferences by the specific use-case and my mood.
+
+so i made a little utility to encode my personal preferences and vary them as i
+wish.
