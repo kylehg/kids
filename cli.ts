@@ -1,6 +1,14 @@
 #!/usr/bin/env bun
 import { parseArgs } from "node:util";
-import { ALPHABET16, ALPHABET26, ALPHABET36, ALPHABET62, ALT16, make_kid } from "./index.ts";
+import {
+  ALPHABET16,
+  ALPHABET26,
+  ALPHABET36,
+  ALPHABET62,
+  ALT16,
+  make_kid,
+  type Precision,
+} from "./index.ts";
 
 type Preset = { alphabet: string; time_length?: number; random_length?: number };
 
@@ -29,6 +37,10 @@ Options:
   -t, --time <n>      Number of time chars
   -r, --random <n>    Number of random chars
   -p, --prefix <s>    String to put before the ID
+  -e, --epoch <when>  Time zero for the time part, as an ISO date or ms since
+                      the Unix epoch. Default: the Unix epoch. A later epoch
+                      makes the time part last longer.
+      --precision <u> Unit of the time part: ms (default) or sec
   -h, --help          Show this help
 `;
 
@@ -52,6 +64,19 @@ function parse_length(name: string, value: string | undefined, fallback: number 
   return n;
 }
 
+function parse_epoch(value: string | undefined): number {
+  if (value === undefined) return 0;
+  const ms = /^-?\d+$/.test(value) ? Number(value) : Date.parse(value);
+  if (!Number.isFinite(ms)) usage_error(`--epoch must be an ISO date or ms since the Unix epoch, got ${value}`);
+  return ms;
+}
+
+function parse_precision(value: string | undefined): Precision {
+  if (value === undefined || value === "ms") return "ms";
+  if (value === "sec") return "sec";
+  return usage_error(`--precision must be ms or sec, got ${value}`);
+}
+
 export function main(argv: string[]): string {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -60,6 +85,8 @@ export function main(argv: string[]): string {
       time: { type: "string", short: "t" },
       random: { type: "string", short: "r" },
       prefix: { type: "string", short: "p", default: "" },
+      epoch: { type: "string", short: "e" },
+      precision: { type: "string" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -85,7 +112,8 @@ export function main(argv: string[]): string {
   const random_length = parse_length("random", values.random, preset.random_length);
   if (time_length + random_length === 0) usage_error("the ID would be empty");
 
-  return make_kid(preset.alphabet, time_length, random_length)(values.prefix);
+  const options = { epoch: parse_epoch(values.epoch), precision: parse_precision(values.precision) };
+  return make_kid(preset.alphabet, time_length, random_length, options)(values.prefix);
 }
 
 if (import.meta.main) {

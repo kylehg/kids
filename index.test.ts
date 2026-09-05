@@ -7,6 +7,7 @@ import {
   ALT16,
   encode_time,
   kid,
+  make_kid,
   kid16,
   kid26,
   kid36,
@@ -122,6 +123,50 @@ describe.each(variants)("$name", ({ fn, alphabet, time_length, random_length }) 
   });
 });
 
+describe("make_kid options", () => {
+  const time_of = (id: string, alphabet: string, len: number) => decode_time(id.slice(0, len), alphabet);
+
+  test("epoch shifts the time part", () => {
+    const epoch = Date.UTC(2020, 0, 1);
+    const fn = make_kid(ALPHABET16, 12, 0, { epoch });
+    const before = Date.now() - epoch;
+    const t = time_of(fn(), ALPHABET16, 12);
+    expect(t).toBeGreaterThanOrEqual(before);
+    expect(t).toBeLessThanOrEqual(Date.now() - epoch);
+  });
+
+  test("epoch accepts a Date", () => {
+    const epoch = new Date(Date.UTC(2020, 0, 1));
+    const a = make_kid(ALPHABET16, 12, 0, { epoch })();
+    const b = make_kid(ALPHABET16, 12, 0, { epoch: epoch.getTime() })();
+    expect(Math.abs(time_of(a, ALPHABET16, 12) - time_of(b, ALPHABET16, 12))).toBeLessThan(50);
+  });
+
+  test("precision sec writes whole seconds", () => {
+    const fn = make_kid(ALPHABET16, 8, 0, { precision: "sec" });
+    const before = Math.floor(Date.now() / 1000);
+    const t = time_of(fn(), ALPHABET16, 8);
+    expect(t).toBeGreaterThanOrEqual(before);
+    expect(t).toBeLessThanOrEqual(Math.floor(Date.now() / 1000));
+  });
+
+  test("epoch and precision combine", () => {
+    const epoch = Date.UTC(2020, 0, 1);
+    const fn = make_kid(ALPHABET16, 8, 0, { epoch, precision: "sec" });
+    const t = time_of(fn(), ALPHABET16, 8);
+    expect(t).toBe(Math.floor((Date.now() - epoch) / 1000));
+  });
+
+  test("throws when now is before the epoch", () => {
+    const fn = make_kid(ALPHABET16, 12, 0, { epoch: Date.now() + 1e9 });
+    expect(() => fn()).toThrow(RangeError);
+  });
+
+  test("throws on an invalid epoch", () => {
+    expect(() => make_kid(ALPHABET16, 12, 0, { epoch: new Date("nope") })).toThrow(RangeError);
+  });
+});
+
 describe("ALT16", () => {
   test("is base 16, letters k through z, in ASCII order", () => {
     expect(ALT16).toHaveLength(16);
@@ -158,7 +203,23 @@ describe("cli", () => {
     expect(run("xyz", "-t", "30", "-r", "4").out).toMatch(/^[xyz]{34}\n$/);
   });
 
+  test("takes epoch and precision", () => {
+    const epoch = Date.UTC(2020, 0, 1);
+    const r = run("16", "-t", "12", "-r", "0", "-e", "2020-01-01T00:00:00Z");
+    const t = decode_time(r.out.trim(), ALPHABET16);
+    expect(t).toBeLessThanOrEqual(Date.now() - epoch);
+    expect(t).toBeGreaterThan(Date.now() - epoch - 5000);
+
+    const s = run("16", "-t", "8", "-r", "0", "--epoch", String(epoch), "--precision", "sec");
+    const ts = decode_time(s.out.trim(), ALPHABET16);
+    expect(ts).toBeLessThanOrEqual(Math.floor((Date.now() - epoch) / 1000));
+    expect(ts).toBeGreaterThan(Math.floor((Date.now() - epoch) / 1000) - 5);
+  });
+
   test("rejects bad input", () => {
+    expect(run("-e", "yesterday").err).toContain("--epoch must be");
+    expect(run("--precision", "ns").err).toContain("--precision must be");
+    expect(run("-e", "2999-01-01").err).toContain("before the epoch");
     expect(run("99").code).toBe(2);
     expect(run("xyz").err).toContain("--time is required");
     expect(run("-r", "abc").err).toContain("--random must be a whole number");

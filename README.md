@@ -24,9 +24,21 @@ earlier as plain strings. Lengths are chosen so the time part lasts more than
 | `kid36`  | `0-9a-z`    | 9          | year 5188   | 13           | 67.2 |
 | `kid62`  | `0-9A-Za-z` | 8          | year 8888   | 11           | 65.5 |
 
-To roll your own, use `make_kid(alphabet, time_length, random_length)`, or the
-pieces it is built from: `encode_time(ms, alphabet, length)` and
-`random_chars(alphabet, length)`. The alphabets are exported as `ALPHABET16`,
+To roll your own, use `make_kid(alphabet, time_length, random_length, options?)`,
+or the pieces it is built from: `encode_time(ms, alphabet, length)` and
+`random_chars(alphabet, length)`. The options are:
+
+- `epoch`: time zero for the time part, as ms since the Unix epoch or a
+  `Date`. Default 0. A later epoch makes the same number of time chars last
+  longer. Making an ID before the epoch throws.
+- `precision`: `"ms"` (default) or `"sec"`. With `"sec"` the time part counts
+  whole seconds, so it lasts 1000 times longer but IDs made within the same
+  second do not sort by creation order.
+
+```ts
+const short = make_kid(ALPHABET36, 6, 10, { epoch: Date.UTC(2024, 0, 1), precision: "sec" });
+short(); // 6 base-36 seconds last ~69 years from 2024
+``` The alphabets are exported as `ALPHABET16`,
 `ALPHABET26`, `ALPHABET36`, and `ALPHABET62`. There is also `ALT16`, base 16
 written in the letters `k-z`, for hex-shaped IDs with no digits.
 
@@ -49,6 +61,8 @@ The first argument picks the alphabet: `16`, `26` (default), `36`, `62`, or
 | `-t, --time <n>`    | Number of time chars       |
 | `-r, --random <n>`  | Number of random chars     |
 | `-p, --prefix <s>`  | String to put before the ID |
+| `-e, --epoch <when>` | Time zero, as an ISO date or ms since the Unix epoch |
+| `--precision <u>`   | `ms` (default) or `sec`    |
 | `-h, --help`        | Show help                  |
 
 To install it as `kid` on your path, run `bun link` in this directory.

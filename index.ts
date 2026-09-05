@@ -24,6 +24,19 @@ export const ALT16 = "klmnopqrstuvwxyz";
 
 export type KidFn = (prefix?: string) => string;
 
+export type Precision = "ms" | "sec";
+
+export type KidOptions = {
+  /**
+   * Time zero for the time part, as ms since the Unix epoch or a Date.
+   * Default 0 (the Unix epoch). A later epoch makes the time part last
+   * longer. Making an ID before the epoch throws.
+   */
+  epoch?: number | Date;
+  /** Unit of the time part. Default "ms". */
+  precision?: Precision;
+};
+
 /**
  * Write `ms` in the base of `alphabet`, padded on the left with the first
  * character to `length`. Throws if `ms` does not fit.
@@ -62,9 +75,24 @@ export function random_chars(alphabet: string, length: number): string {
 }
 
 /** Build a KID function for `alphabet` with the given part lengths. */
-export function make_kid(alphabet: string, time_length: number, random_length: number): KidFn {
-  return (prefix = "") =>
-    prefix + encode_time(Date.now(), alphabet, time_length) + random_chars(alphabet, random_length);
+export function make_kid(
+  alphabet: string,
+  time_length: number,
+  random_length: number,
+  { epoch = 0, precision = "ms" }: KidOptions = {},
+): KidFn {
+  const epoch_ms = typeof epoch === "number" ? epoch : epoch.getTime();
+  if (!Number.isFinite(epoch_ms)) throw new RangeError(`invalid epoch: ${String(epoch)}`);
+  const divisor = precision === "sec" ? 1000 : 1;
+  return (prefix = "") => {
+    const elapsed = Date.now() - epoch_ms;
+    if (elapsed < 0) throw new RangeError(`current time is before the epoch ${epoch_ms}`);
+    return (
+      prefix +
+      encode_time(elapsed / divisor, alphabet, time_length) +
+      random_chars(alphabet, random_length)
+    );
+  };
 }
 
 /** Hex KID: 12 time chars + 16 random chars, `0-9a-f`. */
