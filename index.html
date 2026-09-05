@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KID calculator</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fafafa; --fg: #1a1a1a; --muted: #666; --line: #ddd; --card: #fff;
+    --accent: #2456c4; --warn: #b3261e; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151515; --fg: #eee; --muted: #999; --line: #333; --card: #1e1e1e; --accent: #7aa2ff; --warn: #ff7b72; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 .75rem; }
+  p.lede { color: var(--muted); margin: 0 0 1.5rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1.25rem; }
+  label { display: block; font-size: .85rem; color: var(--muted); }
+  form > label + label, form > .row, .row + .row { margin-top: .9rem; }
+  input, select { width: 100%; margin-top: .25rem; padding: .45rem .55rem; font: inherit; color: var(--fg);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 5px; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  .presets { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .25rem; }
+  .presets button { font: inherit; font-size: .85rem; padding: .3rem .7rem; border: 1px solid var(--line);
+    border-radius: 999px; background: var(--card); color: var(--fg); cursor: pointer; }
+  .presets button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .sample { font-family: var(--mono); font-size: 1.05rem; word-break: break-all; margin: .25rem 0 0; }
+  .sample .t { color: var(--accent); }
+  .sample .p { color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1rem; margin: 0; }
+  dt { color: var(--muted); }
+  dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .big { font-size: 1.5rem; font-weight: 600; line-height: 1.2; }
+  .warn { color: var(--warn); }
+  .note { font-size: .85rem; color: var(--muted); margin: .75rem 0 0; }
+  .stack > * + * { margin-top: 1.5rem; }
+  code { font-family: var(--mono); font-size: .9em; }
+  small.legend { display: block; color: var(--muted); font-size: .8rem; margin-top: .35rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>KID calculator</h1>
+  <p class="lede">A KID is <code>[prefix] + time + random</code>. Pick a configuration to see how long the time part lasts and how many IDs it takes for the random part to risk a collision.</p>
+
+  <div class="grid">
+    <form class="card" id="form" autocomplete="off">
+      <h2>Configuration</h2>
+
+      <label>Alphabet
+        <div class="presets" id="presets"></div>
+        <input id="alphabet" spellcheck="false" />
+      </label>
+
+      <div class="row">
+        <label>Time chars <input id="time" type="number" min="0" step="1" /></label>
+        <label>Random chars <input id="random" type="number" min="0" step="1" /></label>
+      </div>
+
+      <div class="row">
+        <label>Epoch (UTC) <input id="epoch" type="date" /></label>
+        <label>Precision
+          <select id="precision"><option value="ms">milliseconds</option><option value="sec">seconds</option></select>
+        </label>
+      </div>
+
+      <div class="row">
+        <label>Prefix <input id="prefix" spellcheck="false" placeholder="none" /></label>
+        <label>Collision threshold (%) <input id="p" type="number" min="0.0001" max="99" step="any" /></label>
+      </div>
+    </form>
+
+    <div class="stack">
+      <div class="card">
+        <h2>Sample</h2>
+        <p class="sample" id="sample"></p>
+        <small class="legend"><span class="t">time</span> · random · <span id="len"></span></small>
+      </div>
+
+      <div class="card">
+        <h2>Time part</h2>
+        <div id="time_out"></div>
+      </div>
+
+      <div class="card">
+        <h2>Random part</h2>
+        <div id="random_out"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const ALPHABETS = {
+  "16": "0123456789abcdef",
+  "26": "abcdefghijklmnopqrstuvwxyz",
+  "36": "0123456789abcdefghijklmnopqrstuvwxyz",
+  "62": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+  alt16: "klmnopqrstuvwxyz",
+};
+const PRESETS = {
+  "16": [12, 16], "26": [10, 14], "36": [9, 13], "62": [8, 11], alt16: [12, 16],
+};
+const MAX_DATE_MS = 8.64e15;
+const MS_PER_YEAR = 365.2425 * 86_400_000;
+
+const $ = (id) => document.getElementById(id);
+const el = { alphabet: $("alphabet"), time: $("time"), random: $("random"), epoch: $("epoch"),
+  precision: $("precision"), prefix: $("prefix"), p: $("p") };
+
+// --- KID pieces, same as index.ts ---
+function encode_time(ms, alphabet, length) {
+  const base = alphabet.length;
+  let n = Math.floor(ms), out = "";
+  while (n > 0) { out = alphabet[n % base] + out; n = Math.floor(n / base); }
+  if (out.length > length) throw new RangeError("does not fit");
+  return out.padStart(length, alphabet[0]);
+}
+function random_chars(alphabet, length) {
+  const base = alphabet.length, limit = 256 - (256 % base);
+  const buf = new Uint8Array(length * 2);
+  let out = "";
+  while (out.length < length) {
+    crypto.getRandomValues(buf);
+    for (const b of buf) { if (b >= limit) continue; out += alphabet[b % base]; if (out.length === length) break; }
+  }
+  return out;
+}
+
+// --- formatting ---
+const fmt_int = (n) => n < 1e15 ? Math.round(n).toLocaleString("en-US") : n.toExponential(2).replace("e+", " × 10^");
+function fmt_years(y) {
+  if (y < 1) return `${Math.round(y * 365)} days`;
+  if (y < 1e4) return `${y.toFixed(y < 10 ? 1 : 0)} years`;
+  return `${fmt_int(y)} years`;
+}
+function words(n) {
+  if (n >= 1e18) return fmt_int(n);
+  const units = [["quadrillion", 1e15], ["trillion", 1e12], ["billion", 1e9], ["million", 1e6], ["thousand", 1e3]];
+  for (const [w, v] of units) if (n >= v) return `${(n / v).toPrecision(3).replace(/\.?0+$/, "")} ${w}`;
+  return Math.round(n).toLocaleString("en-US");
+}
+
+// --- state ---
+function preset_for(alphabet) {
+  return Object.keys(ALPHABETS).find((k) => ALPHABETS[k] === alphabet);
+}
+function read() {
+  const alphabet = el.alphabet.value;
+  return {
+    alphabet,
+    time: Math.max(0, Math.floor(Number(el.time.value) || 0)),
+    random: Math.max(0, Math.floor(Number(el.random.value) || 0)),
+    epoch_ms: el.epoch.value ? Date.parse(el.epoch.value + "T00:00:00Z") : 0,
+    precision: el.precision.value,
+    prefix: el.prefix.value,
+    p: Math.min(99, Math.max(1e-4, Number(el.p.value) || 1)) / 100,
+  };
+}
+function save(s) {
+  const q = new URLSearchParams({ a: preset_for(s.alphabet) ?? s.alphabet, t: s.time, r: s.random,
+    e: el.epoch.value, u: s.precision, p: s.p * 100 });
+  if (s.prefix) q.set("x", s.prefix);
+  history.replaceState(null, "", "#" + q);
+}
+function load() {
+  const q = new URLSearchParams(location.hash.slice(1));
+  const a = q.get("a") ?? "26";
+  el.alphabet.value = ALPHABETS[a] ?? a;
+  const [t, r] = PRESETS[a] ?? [10, 14];
+  el.time.value = q.get("t") ?? t;
+  el.random.value = q.get("r") ?? r;
+  el.epoch.value = q.get("e") ?? "";
+  el.precision.value = q.get("u") ?? "ms";
+  el.prefix.value = q.get("x") ?? "";
+  el.p.value = q.get("p") ?? "1";
+}
+
+// --- render ---
+function render() {
+  const s = read();
+  save(s);
+  const base = new Set(s.alphabet).size;
+  const valid = base >= 2 && base === s.alphabet.length;
+  for (const b of $("presets").children) b.setAttribute("aria-pressed", String(ALPHABETS[b.dataset.k] === s.alphabet));
+
+  if (!valid) {
+    $("sample").innerHTML = `<span class="warn">Alphabet needs at least 2 distinct characters.</span>`;
+    $("len").textContent = ""; $("time_out").innerHTML = ""; $("random_out").innerHTML = "";
+    return;
+  }
+
+  const unit_ms = s.precision === "sec" ? 1000 : 1;
+  const now = Date.now();
+  const elapsed = now - s.epoch_ms;
+
+  // Sample
+  let time_part = "";
+  let time_err = null;
+  if (s.time > 0) {
+    if (elapsed < 0) time_err = "The current time is before the epoch.";
+    else try { time_part = encode_time(elapsed / unit_ms, s.alphabet, s.time); }
+    catch { time_err = "The current time does not fit in the time part."; }
+  }
+  $("sample").innerHTML = time_err
+    ? `<span class="warn">${time_err}</span>`
+    : `<span class="p">${esc(s.prefix)}</span><span class="t">${time_part}</span>${random_chars(s.alphabet, s.random)}`;
+  const total_bits = (s.time + s.random) * Math.log2(base);
+  $("len").textContent = `${s.time + s.random} chars, base ${base}, ${total_bits.toFixed(1)} bits total`;
+
+  // Time part
+  if (s.time === 0) {
+    $("time_out").innerHTML = `<p class="note" style="margin-top:0">No time part. IDs are pure random and do not sort by creation time.</p>`;
+  } else {
+    const span_ms = base ** s.time * unit_ms;
+    const end_ms = s.epoch_ms + span_ms;
+    const years_left = (end_ms - now) / MS_PER_YEAR;
+    let until, until_note = "";
+    if (end_ms > MAX_DATE_MS) { until = "beyond year 275,760"; until_note = "past the end of the JavaScript date range"; }
+    else until = new Date(end_ms).toISOString().slice(0, 10);
+    const cls = years_left < 20 ? "warn" : "";
+    $("time_out").innerHTML = `
+      <dl>
+        <dt>Lasts until</dt><dd class="big ${cls}">${until}</dd>
+        <dt>That is</dt><dd class="${cls}">${years_left < 0 ? "already expired" : fmt_years(years_left) + " from now"}${until_note ? ` (${until_note})` : ""}</dd>
+        <dt>Bits</dt><dd>${(s.time * Math.log2(base)).toFixed(1)}</dd>
+        <dt>Distinct values</dt><dd>${fmt_int(base ** s.time)} ${s.precision === "sec" ? "seconds" : "milliseconds"} from the epoch</dd>
+      </dl>
+      <p class="note">${s.precision === "sec" ? "IDs made within the same second do not sort by creation order." : "IDs sort by creation time as plain strings."}</p>`;
+  }
+
+  // Random part
+  if (s.random === 0) {
+    $("random_out").innerHTML = `<p class="note warn" style="margin-top:0">No random part. Any two IDs made in the same ${s.precision === "sec" ? "second" : "millisecond"} collide.</p>`;
+  } else {
+    const N = base ** s.random;
+    const bits = s.random * Math.log2(base);
+    // Birthday bound: P(collision among n) ≈ 1 − exp(−n²/2N), so n = sqrt(2N ln(1/(1−p))).
+    const n_p = Math.sqrt(2 * N * Math.log(1 / (1 - s.p)));
+    const n_50 = Math.sqrt(2 * N * Math.LN2);
+    const window = s.time === 0 ? "in total, ever" : `within one ${s.precision === "sec" ? "second" : "millisecond"}`;
+    $("random_out").innerHTML = `
+      <dl>
+        <dt>IDs for ${pct(s.p)} risk</dt><dd class="big">${words(n_p)}</dd>
+        <dt></dt><dd>${fmt_int(n_p)} IDs ${window}</dd>
+        <dt>IDs for 50% risk</dt><dd>${words(n_50)}</dd>
+        <dt>Bits</dt><dd>${bits.toFixed(1)}</dd>
+        <dt>Distinct values</dt><dd>${fmt_int(N)}</dd>
+      </dl>
+      <p class="note">${s.time === 0 ? "With no time part, every ID ever made can collide with every other." : "Two IDs can only collide if their time parts match, so the count is per time unit."} Birthday bound: P ≈ 1 − exp(−n² / 2N).</p>`;
+  }
+}
+const pct = (p) => { const v = p * 100; return String(+(v < 1 ? v.toPrecision(2) : v.toFixed(2))) + "%"; };
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+
+// --- wire up ---
+for (const k of Object.keys(ALPHABETS)) {
+  const b = document.createElement("button");
+  b.type = "button"; b.textContent = k; b.dataset.k = k;
+  b.onclick = () => { el.alphabet.value = ALPHABETS[k]; [el.time.value, el.random.value] = PRESETS[k]; render(); };
+  $("presets").append(b);
+}
+$("form").addEventListener("input", render);
+$("form").addEventListener("submit", (e) => e.preventDefault());
+window.addEventListener("hashchange", () => { load(); render(); });
+load();
+render();
+</script>
+</body>
+</html>

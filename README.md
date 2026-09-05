@@ -70,6 +70,14 @@ The first argument picks the alphabet: `16`, `26` (default), `36`, `62`, or
 
 To install it as `kid` on your path, run `bun link` in this directory.
 
+## Calculator
+
+Open `index.html` in a browser. It is one file with no dependencies. For a
+given alphabet, part lengths, epoch, and precision it shows a sample ID, the
+date the time part lasts until, and how many IDs it takes for the random part
+to reach a chosen collision risk (birthday bound). The configuration is kept
+in the URL hash so you can share a link.
+
 ## Develop
 
 ```sh
