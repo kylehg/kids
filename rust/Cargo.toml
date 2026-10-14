@@ -1,0 +1,15 @@
+[package]
+name = "kids"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+description = "KIDs (KyleIDs): short, sortable IDs made of a timestamp part and a random part."
+
+[[bin]]
+name = "kid"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.6", features = ["derive"] }
+jiff = "0.2.38"
+rand = "0.10.3"
